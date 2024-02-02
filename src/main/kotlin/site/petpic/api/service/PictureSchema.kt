@@ -13,13 +13,13 @@ import java.time.LocalDateTime
 @Serializable
 data class ExposedPicture(val email: String, val url: String)
 @Serializable
-data class ExposedStatus(val email: String, val status: Boolean)
+data class ExposedStatus( val status: Boolean)
 
 class ServicePicture(private val database: Database) {
     object Picture : Table() {
         val id = integer("ID").autoIncrement()
         val email = varchar("USER_MAIL", length = 50)
-        val url = varchar("IMAGE_URL", length = 120)
+        val url = varchar("IMAGE_URL", length = 120).clientDefault { "" }
         val status = bool("STATUS").clientDefault { false }
         val createdAt = datetime("created_at").clientDefault { LocalDateTime.now() }
         val updatedAt = datetime("updated_at").clientDefault { LocalDateTime.now() }
@@ -45,17 +45,18 @@ class ServicePicture(private val database: Database) {
 
     suspend fun read(email: String): List<ExposedPicture> {
         return dbQuery {
-            Picture.select { Picture.email eq email and (Picture.status eq false) }
+            Picture.select { Picture.email eq email and (Picture.status eq true) }
                 .map { ExposedPicture(it[Picture.email], it[Picture.url]) }
         }
     }
 
-    suspend fun status(email: String): ExposedStatus {
+    suspend fun status(email: String): ExposedStatus? {
         return dbQuery {
             Picture.select { Picture.email eq email }
-                .map { ExposedStatus(it[Picture.email], it[Picture.status]) }
-                .reversed()
-                .first()
+                .orderBy(Picture.createdAt, SortOrder.DESC)
+                .map { ExposedStatus( it[Picture.status]) }
+
+                .firstOrNull()
         }
     }
 

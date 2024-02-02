@@ -23,7 +23,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.jetbrains.exposed.sql.Database
 import site.petpic.api.service.UploadFile
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
+
 import java.util.*
 
 
@@ -32,13 +32,15 @@ fun Application.picture() {
         json()
     }
     val config = getProp()
-    val authDomain = config.property("authDomain").getString()
+ //   val authDomain = config.property("authDomain").getString()
 
     install(Authentication) {
         bearer("auth-bearer") {
             // realm = "Access to the '/' path"
+
+
             authenticate { tokenCredential ->
-                if (httpGet(config).equals(HttpStatusCode.OK) ) {
+                if (httpGet(config, tokenCredential.token) == HttpStatusCode.OK) {
                     UserIdPrincipal("User")
                 } else {
                     null
@@ -84,7 +86,7 @@ fun Application.picture() {
                 val userMail = Json.decodeFromString<JwtPayload>(jwtPayload!!).sub
           //      val picture = pictureService.status(userMail)
 
-                if (pictureService.status(userMail)!!.status) {
+                if (pictureService.status(userMail)?.status == false) {
                     return@post call.respond(HttpStatusCode(418, "In Progressing"))
                 }
 
@@ -102,9 +104,9 @@ fun Application.picture() {
                             val fileName = part.originalFileName as String
                             val extension = fileName.split(".")[1]
 
-                            if (!extension.equals("jpeg", true) ||
-                                !extension.equals("jpg", true) ||
-                                !extension.equals("png", true)
+                            if (extension != "jpeg" &&
+                                extension != "jpg" &&
+                                extension !=("png")
                             ) {
 
                                 return@forEachPart call.respond(HttpStatusCode(499, "Invalid file extension"))
@@ -133,10 +135,10 @@ fun Application.picture() {
                     return@post call.respond(HttpStatusCode(599, "GCS Upload Error"))
                 }
 
-                val pictureCreate = call.receive<ExposedPicture>()
+            //    val pictureCreate = call.receive<ExposedPicture>()
                 //  val id =
                 try {
-                    pictureService.create(pictureCreate)
+                    pictureService.create(ExposedPicture(email = userMail, url= ""))
                 }
                 catch (e: Exception) {
                     return@post call.respond(HttpStatusCode(598, "DB Error"))
@@ -184,10 +186,16 @@ fun Application.picture() {
     }
 
 }
-suspend fun httpGet(config: YamlConfig): HttpResponse {
-    val authDomain = config.property("authDomain").getString()
+suspend fun httpGet(config: YamlConfig, token: String): HttpStatusCode {
+  //  val authDomain = config.property("authDomain").getString()
     val client = HttpClient(CIO)
-    return client.get("$authDomain/auth/")}
+
+    return client.get("http://localhost:8000/auth/validate"){
+
+        header(HttpHeaders.Authorization, "Bearer $token")
+    }.status
+
+}
 
 fun getProp(): YamlConfig {
     return if(YamlConfig("conf/application.yaml") != null) {
