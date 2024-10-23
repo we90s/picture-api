@@ -66,7 +66,7 @@ fun Application.picture() {
     }
     if(env != "local") {
         kafkaConfigs.setProperty("sasl.mechanism", "SCRAM-SHA-256")
-      //  kafkaConfigs.setProperty("security.protocol", "SASL_SSL")
+        kafkaConfigs.setProperty("security.protocol", "SASL_PLAINTEXT")  // SASL_PLAINTEXT 사용
         kafkaConfigs.setProperty("sasl.jaas.config", jaasConfig)
     }
     val url = config.property("ktor.database.url").getString()
