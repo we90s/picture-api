@@ -48,9 +48,10 @@ dependencies {
     implementation("com.google.cloud:google-cloud-storage:2.32.1")
     implementation("com.google.cloud:google-cloud-vision:3.31.0")
     // https://mvnrepository.com/artifact/mysql/mysql-connector-java
-    implementation("mysql:mysql-connector-java:8.0.33")
+    //implementation("mysql:mysql-connector-java:8.0.33")
+    implementation("org.postgresql:postgresql:42.7.4")
     implementation("io.ktor:ktor-client-cio:$ktor_version")
 
     implementation("org.jetbrains.exposed:exposed-java-time:$exposed_version")
-
+    implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 }

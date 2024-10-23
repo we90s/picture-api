@@ -1,0 +1,35 @@
+name: Deploy to ghcr
+
+on:
+  #  push:
+  #    branches: [ "main" ]
+  workflow_dispatch:
+
+
+
+permissions:
+  contents: read
+  packages: write
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build, tag, and push docker image to ghcr
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t app .
+          docker tag app ghcr.io/we90s/petpic-api:$IMAGE_TAG
+          docker tag app ghcr.io/we90s/petpic-api:latest
+          docker push ghcr.io/we90s/petpic-api:$IMAGE_TAG
+          docker push ghcr.io/we90s/petpic-api:latest

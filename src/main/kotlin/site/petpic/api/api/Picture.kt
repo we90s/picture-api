@@ -23,17 +23,24 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.jetbrains.exposed.sql.Database
 import site.petpic.api.service.UploadFile
 import io.ktor.client.request.*
+import kotlinx.serialization.json.JsonObject
 
 import java.util.*
 
 
 fun Application.picture() {
     install(ContentNegotiation) {
-        json()
+        json(Json {
+        prettyPrint = true
+    })
     }
     val config = getProp()
  //   val authDomain = config.property("authDomain").getString()
-
+    routing {
+        get("/") {
+            call.respond(HttpStatusCode.OK)
+        }
+    }
     install(Authentication) {
         bearer("auth-bearer") {
             // realm = "Access to the '/' path"
@@ -69,7 +76,7 @@ fun Application.picture() {
     val database = Database.connect(
         url = url,
         user = user,
-        driver = "com.mysql.cj.jdbc.Driver",
+        driver = "org.postgresql.Driver",
         password = password
     )
 
@@ -137,6 +144,8 @@ fun Application.picture() {
 
             //    val pictureCreate = call.receive<ExposedPicture>()
                 //  val id =
+
+
                 try {
                     pictureService.create(ExposedPicture(email = userMail, url= ""))
                 }
@@ -147,7 +156,7 @@ fun Application.picture() {
                     producer.send(
                         ProducerRecord
                             (
-                            "maskImage",
+                            "originImage2",
                             mapOf("prompt" to prompt, "origin_key" to originKey, "user_mail" to userMail).toString()
                         )
                     )
@@ -190,7 +199,7 @@ suspend fun httpGet(config: YamlConfig, token: String): HttpStatusCode {
   //  val authDomain = config.property("authDomain").getString()
     val client = HttpClient(CIO)
 
-    return client.get("http://localhost:8000/auth/validate"){
+    return client.get("http://petpic-auth-service/auth/validate"){
 
         header(HttpHeaders.Authorization, "Bearer $token")
     }.status
@@ -198,8 +207,8 @@ suspend fun httpGet(config: YamlConfig, token: String): HttpStatusCode {
 }
 
 fun getProp(): YamlConfig {
-    return if(YamlConfig("conf/application.yaml") != null) {
-        YamlConfig("conf/application.yaml")!!
+    return if(YamlConfig("/app/conf/application.yaml") != null) {
+        YamlConfig("/app/conf/application.yaml")!!
     }
     else{
         YamlConfig("application.yaml")!!
